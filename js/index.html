@@ -1,0 +1,384 @@
+<!doctype html>
+<!-- TODO:
+- get fluid side by side layout prettier (should un-grid at low widths. Change to flexbox?)
+  - try to fix the width of the left side
+- update and add footnotes
+- handle light or dark mode, or fix on one
+- links to section headers, hover pilcrow thingy
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="css/pico.min.css" />
+    <!-- code highlighting -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css"
+    />
+    <script type="module">
+      import hljs from "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/es/highlight.min.js";
+      hljs.highlightAll();
+    </script>
+    <title>Drawing Trees</title>
+    <style>
+      .sidebyside {
+        display: flex;
+        flex-wrap: wrap;
+        padding-bottom: 10px;
+        align-items: center;
+      }
+      .side1 {
+        padding-left: 0px;
+        padding-right: 20px;
+        flex: 300px 0 0;
+      }
+      .side2 {
+        flex: 1;
+      }
+      @media (max-width: 768px) {
+        .container {
+          flex-direction: column;
+        }
+
+        .side1,
+        .side2 {
+          flex: 1 0 auto;
+          width: 100%;
+        }
+      }
+      .widesidebyside {
+        display: flex;
+        flex-wrap: wrap;
+        padding-bottom: 10px;
+        align-items: center;
+      }
+      .wside1 {
+        flex: 2;
+        padding-right: 25px;
+      }
+      figcaption {
+        margin-top: -20px;
+        padding: 0 !important;
+        font-style: italic;
+      }
+      pre {
+        margin-bottom: 0px;
+      }
+    </style>
+    <script src="./dist/index.js" type="module"></script>
+  </head>
+  <!-- template
+    <div class="sidebyside">
+      <div class="side1"></div>
+      <div class="side2"></div>
+    </div>
+    /template -->
+
+  <body>
+    <main class="container">
+      <h1>Drawing Presentable Trees</h1>
+      <section>
+        <h2>What are we doing here</h2>
+        <p>
+          We want to figure out how to lay out trees nicely. Let's build some
+          trees, draw them, and start inventing principles until we have
+          nice-looking trees.
+        </p>
+        <p>TK: put an example of the finished product here</p>
+        <p>TK: table of contents</p>
+        <h2>We need a tree</h2>
+        <div class="sidebyside">
+          <div class="side1">
+            <p>A tree has some data, and some children.</p>
+          </div>
+
+          <div class="side2">
+            <figure id="listing1">
+              <pre><code class="language-typescript">class Tree {
+  data: string;
+  children: Tree[];
+
+  constructor(data: string, ...children: Tree[]) {
+    this.data = data;
+    this.children = children;
+  }
+}</code></pre>
+              <figcaption>listing 1</figcaption>
+            </figure>
+          </div>
+        </div>
+        <div class="sidebyside">
+          <div class="side1">
+            <p>
+              Let's start by limiting ourselves to <dfn>binary trees</dfn>,
+              trees which have no more than 2 children per node.
+            </p>
+          </div>
+          <div class="side2">
+            <figure id="listing2">
+              <pre><code class="language-typescript">const tree = new Tree("root",
+  new Tree("l"),
+  new Tree("r",
+    new Tree("r2",
+      new Tree("r3",
+        new Tree("r4")))));</code></pre>
+              <figcaption>listing 2</figcaption>
+            </figure>
+          </div>
+        </div>
+        <div class="sidebyside">
+          <div class="side1">
+            <p>
+              In order to avoid adding drawing state to our nice clean
+              <code>Tree</code> structure, let's create a
+              <code>DrawTree</code> to wrap it and maintain drawing context.
+            </p>
+
+            <p>
+              Future functions will have to add more state, but this is what
+              we'll start with.
+            </p>
+          </div>
+          <div class="side2">
+            <figure id="listing3">
+              <pre><code class="language-typescript">class DrawTree {
+  x: number;
+  y: number;
+  children: DrawTree[];
+
+  constructor(
+    tree: Tree,
+    depth: number = 0,
+  ) {
+    this.x = -1;
+    this.y = depth;
+    this.children = tree.children.map(
+      (t) => new DrawTree(t, this, depth + 1),
+    );
+  }
+}</code></pre>
+              <figcaption>listing 3</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+      <section>
+        <h2>How do we visit each node</h2>
+        <p>
+          To draw our tree, we're going to need to visit each node in the tree
+          and figure out where to place it. Before we do though, we should
+          discuss three ways to visit each node in a binary tree.
+        </p>
+        <p>
+          In each of the following diagrams, the numbers represent the order in
+          which the nodes was visited.
+        </p>
+
+        <div class="widesidebyside">
+          <div class="wside1">
+            In an <dfn>inorder</dfn> traversal, visit the left child of a node
+            first, then the node itself, then the right child.
+          </div>
+          <div class="wside2">
+            <figure id="figure1">
+              <canvas id="inorder" height="250" width="350"></canvas>
+              <figcaption>figure 1</figcaption>
+            </figure>
+          </div>
+        </div>
+        <div class="widesidebyside">
+          <div class="wside1">
+            In a <dfn>preorder</dfn> traversal, visit the the node itself first,
+            then its children.
+          </div>
+          <div class="wside2">
+            <figure id="figure2">
+              <canvas id="preorder" height="250" width="350"></canvas>
+              <figcaption>figure 2</figcaption>
+            </figure>
+          </div>
+        </div>
+        <div class="widesidebyside">
+          <div class="wside1">
+            In a <dfn>postorder</dfn> traversal, visit the the children of the
+            node first, then the node.
+          </div>
+          <div class="wside2">
+            <figure id="figure3">
+              <canvas id="postorder" height="250" width="350"></canvas>
+              <figcaption>figure 3</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+      <section>
+        <h2>In the beginning, there was Knuth</h2>
+        <p>
+          The particular type of drawing that we&#039;ll be making is one where
+          the root is at the top, its children are below it, and so on. This
+          type of diagram, and thus this entire class of problems, owes largely
+          to Donald Knuth<!-- TODO: update footnotes --><sup
+            ><a href="#foot2">2</a></sup
+          >, from whom we will draw our first two principles:
+        </p>
+
+        <blockquote>
+          <strong>Principle 1</strong>: The edges of the tree should not cross
+          each other.
+        </blockquote>
+        <blockquote>
+          <strong>Principle 2</strong>: All nodes at the same depth should be
+          drawn on the same horizontal line.
+        </blockquote>
+        <div class="sidebyside">
+          <div class="side1">
+            <p>
+              The Knuth algorithm has the advantage of simplicity and speed, but
+              it only works on binary trees and it can produce some misshapen
+              drawings. It is an inorder traversal of a tree, with a global
+              counter that is used as the x variable, then incremented at each
+              node.
+            </p>
+          </div>
+          <div class="side2">
+            <figure id="listing4">
+              <pre><code class="language-typescript">let knuth_x = 0;
+function KnuthLayout(tree: DrawTree, depth: number = 0) {
+  if (tree.children[0]) {
+    KnuthLayout(tree.children[0], depth + 1);
+  }
+  tree.x = knuth_x;
+  tree.y = depth;
+  knuth_x += 1;
+  if (tree.children[1]) {
+    KnuthLayout(tree.children[1], depth + 1);
+  }
+}</code></pre>
+              <figcaption>listing 4</figcaption>
+            </figure>
+          </div>
+        </div>
+        <div class="widesidebyside">
+          <div class="wside1">
+            Here's what the tree we made a minute ago looks like when laid out
+            with this algorithm. Each node gets its own x value, which gives the
+            tree an imbalanced, awkward look.
+          </div>
+          <div class="wside2">
+            <figure id="figure4">
+              <canvas id="knuth" height="250" width="350"></canvas>
+              <figcaption>figure 4</figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <p>
+          Trying to draw graphs without re-using x positions can make them very
+          wide, and quite wasteful of space. Let's add a new principle to our
+          drawings:
+        </p>
+
+        <blockquote>
+          <strong>Principle 3</strong>: Trees should be drawn as narrowly as
+          possible
+        </blockquote>
+      </section>
+      <section>
+        <h2>From the bottom up</h2>
+        <p>
+          In 1979, 8 years after Knuth published about the tree layout problem,
+          Charles Wetherell and Alfred Shannon published about some of the
+          improvements they'd found.
+        </p>
+        <div class="sidebyside">
+          <div class="side1">
+            To generate the minimum-width tree that satisfies the principles
+            laid out so far, they showed that you can:
+            <ul>
+              <li>
+                maintain the a list of the next available slot in each row
+              </li>
+              <li>assign the current node the next available slot</li>
+              <li>increment the slot counter</li>
+            </ul>
+          </div>
+          <div class="side2">
+            <figure id="listing4">
+              <pre><code class="language-typescript">function WSMinwidth(tree: DrawTree) {
+  const nexts = new Uint32Array(256);
+  function minwidth(tree: DrawTree, depth: number = 0) {
+    tree.x = nexts[depth];
+    tree.y = depth;
+    nexts[depth] += 1;
+    tree.children.forEach((t) => minwidth(t, depth + 1));
+  }
+  minwidth(tree);
+}</code></pre>
+              <figcaption>listing 5</figcaption>
+            </figure>
+          </div>
+        </div>
+        <div class="widesidebyside">
+          <div class="wside1">
+            <p>The result is narrow, but not very pleasing.</p>
+            <p>
+              As it can be quite difficult to determine relationships in this
+              diagram, let's introduce a new principle that should make it
+              easier to see what node is the parent of what children.
+            </p>
+          </div>
+          <div class="wside2">
+            <figure id="figure5">
+              <canvas id="narrow" height="350" width="200"></canvas>
+              <figcaption>figure 5</figcaption>
+            </figure>
+          </div>
+        </div>
+        <blockquote>
+          <strong>Principle 4</strong>: A parent should be centered over its
+          children
+        </blockquote>
+        <p>
+          Up to now, we've been able to get away with very simple algorithms to
+          draw trees because we've not really had to consider local context;
+          we've relied on global counters to keep our nodes from overlapping
+          each other. In order to satisfy the principle that a parent should be
+          centered over its children, we'll need to consider each node's local
+          context, and so a few new strategies are necessary.
+        </p>
+        <p>
+          The first strategy that Wetherell and Shannon introduced is to build
+          trees up from the bottom with a post-order traversal of the tree,
+          instead of going from the top down like
+          <a href="#listing3">listing 4</a>, or through the middle like
+          <a href="#listing4">listing 5</a>. Once you look at the tree this way,
+          centering the parent is an easy operation - divide its children's x
+          coordinates in half.
+        </p>
+        <p>
+          We must remember, though, to stay mindful of the left side of the tree
+          when constructing the right.
+        </p>
+        <div class="widesidebyside">
+          <div class="wside1">
+            <a href="#figure6">Figure 6</a> shows a scenario where the right
+            side of the tree has been pushed out to the right in order to
+            accommodate the left. To accomplish this separation, Wetherell and
+            Shannon maintain the array of next available spots introduced with
+            <a href="#listing2">listing 4</a>, but only use the next available
+            spot if centering the parent would cause the right side of the tree
+            to overlap the left side.f got pushed to the right
+          </div>
+          <div class="wside2">
+            <figure id="figure6">
+              <canvas id="canvas6" height="180" width="300"></canvas>
+              <figcaption>figure 6</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

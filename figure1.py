@@ -1,9 +1,11 @@
 from gen import Tree
 from demo_trees import trees
 from buchheim import buchheim
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw  # Python Imaging Library (Fork)
+                                  # https://github.com/python-pillow/Pillow/blob/main/src/PIL/Image.py
+                                  # https://github.com/python-pillow/Pillow/blob/main/src/PIL/ImageDraw.py
 
-t = buchheim(trees[6])
+t = buchheim(trees[6])  # <-- t.x, t.children[*].x
 
 DIAMETER = 30
 SPACING_VERTICAL = DIAMETER * 1.5
@@ -42,6 +44,6 @@ def drawconn(draw, root, depth):
 im = Image.new("L", (1000, 500), (255))
 draw = ImageDraw.Draw(im)
 drawconn(draw, t, 0)
-drawt(draw, t, 0)
+#drawt(draw, t, 0)
 
 im.save("figure1.png")
